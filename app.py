@@ -6,7 +6,11 @@ import os
 
 load_dotenv(override=True)
 
+print("STEP 1: Starting application...")
+
 manager = ResearchManager()
+
+print("STEP 2: ResearchManager created...")
 
 
 def format_status(msg: str) -> str:
@@ -20,7 +24,10 @@ async def handle_investigate(query: str):
             "",
             "",
             "Continue Research with Answers",
-            gr.update(value=format_status("⚠️ Please enter a research question first."), visible=True),
+            gr.update(
+                value=format_status("⚠️ Please enter a research question first."),
+                visible=True
+            ),
         )
         return
 
@@ -30,17 +37,27 @@ async def handle_investigate(query: str):
         "",
         "",
         "Continue Research with Answers",
-        gr.update(value=format_status("⏳ Analyzing query for clarification..."), visible=True),
+        gr.update(
+            value=format_status("⏳ Analyzing query for clarification..."),
+            visible=True
+        ),
     )
 
     clarification = await manager.clarify_query(query)
 
     if clarification.needs_clarification and clarification.questions:
+
         questions_fmt = "\n\n".join(
             f"{i}. **{q}**"
             for i, q in enumerate(clarification.questions, 1)
         )
-        msg = f"### 💡 Recommended Clarification Questions:\n\n{questions_fmt}\n\n*Type your answers in the box below to guide the research.*"
+
+        msg = (
+            f"### 💡 Recommended Clarification Questions:\n\n"
+            f"{questions_fmt}\n\n"
+            f"*Type your answers in the box below to guide the research.*"
+        )
+
         yield (
             gr.update(visible=True),
             msg,
@@ -48,16 +65,23 @@ async def handle_investigate(query: str):
             "Continue Research with Answers",
             gr.update(value="", visible=False),
         )
+
     else:
-        # If no clarifications needed -> Directly start deep research without showing prompt/buttons
+
+        # If no clarifications needed -> Directly start deep research
         yield (
             gr.update(visible=False),
             "",
             "",
             "Continue Research with Answers",
-            gr.update(value=format_status("🚀 Starting deep research..."), visible=True),
+            gr.update(
+                value=format_status("🚀 Starting deep research..."),
+                visible=True
+            ),
         )
+
         async for status_update in manager.run(query):
+
             if status_update.startswith("#"):
                 out_val = status_update
             else:
@@ -68,29 +92,39 @@ async def handle_investigate(query: str):
                 "",
                 "",
                 "Continue Research with Answers",
-                gr.update(value=out_val, visible=True),
+                gr.update(
+                    value=out_val,
+                    visible=True
+                ),
             )
 
 
 async def start_research_with_details(query: str, answers: str):
+
     yield (
         gr.update(visible=False),
         "",
         "",
         "Continue Research with Answers",
-        gr.update(value=format_status("🚀 Starting deep research..."), visible=True),
+        gr.update(
+            value=format_status("🚀 Starting deep research..."),
+            visible=True
+        ),
     )
 
     if answers and answers.strip():
+
         final_query = f"""Original research query:
 {query}
 
 User specified answers & additional requirements:
 {answers}"""
+
     else:
         final_query = query
 
     async for status_update in manager.run(final_query):
+
         if status_update.startswith("#"):
             out_val = status_update
         else:
@@ -101,20 +135,28 @@ User specified answers & additional requirements:
             "",
             "",
             "Continue Research with Answers",
-            gr.update(value=out_val, visible=True),
+            gr.update(
+                value=out_val,
+                visible=True
+            ),
         )
 
 
 async def start_research_direct(query: str):
+
     yield (
         gr.update(visible=False),
         "",
         "",
         "Continue Research with Answers",
-        gr.update(value=format_status("🚀 Starting deep research..."), visible=True),
+        gr.update(
+            value=format_status("🚀 Starting deep research..."),
+            visible=True
+        ),
     )
 
     async for status_update in manager.run(query):
+
         if status_update.startswith("#"):
             out_val = status_update
         else:
@@ -125,7 +167,10 @@ async def start_research_direct(query: str):
             "",
             "",
             "Continue Research with Answers",
-            gr.update(value=out_val, visible=True),
+            gr.update(
+                value=out_val,
+                visible=True
+            ),
         )
 
 
@@ -134,6 +179,7 @@ with gr.Blocks(title="Deep Research") as ui:
     gr.HTML(HEADER_HTML)
 
     with gr.Row(elem_classes="dr-query-row"):
+
         query_textbox = gr.Textbox(
             placeholder="Type a research question...",
             show_label=False,
@@ -159,9 +205,14 @@ with gr.Blocks(title="Deep Research") as ui:
     )
 
     # --------------------------------------------------
-    # Clarification Box (Grouped Container)
+    # Clarification Box
     # --------------------------------------------------
-    with gr.Column(visible=False, elem_id="dr-clarification-box") as clarification_box:
+
+    with gr.Column(
+        visible=False,
+        elem_id="dr-clarification-box"
+    ) as clarification_box:
+
         clarification_display = gr.Markdown(
             elem_id="dr-clarification",
         )
@@ -175,11 +226,13 @@ with gr.Blocks(title="Deep Research") as ui:
         )
 
         with gr.Row():
+
             continue_button = gr.Button(
                 "Continue Research with Answers",
                 variant="primary",
                 elem_id="dr-continue",
             )
+
             skip_button = gr.Button(
                 "Skip & Start Research",
                 variant="secondary",
@@ -187,6 +240,7 @@ with gr.Blocks(title="Deep Research") as ui:
             )
 
     # Final report / research status markdown
+
     report = gr.Markdown(
         elem_id="dr-report"
     )
@@ -248,7 +302,12 @@ with gr.Blocks(title="Deep Research") as ui:
 
 
 if __name__ == "__main__":
+
+    print("STEP 3: Entering main...")
+
     port = int(os.environ.get("PORT", 10000))
+
+    print(f"STEP 4: Starting Gradio on 0.0.0.0:{port}")
 
     ui.launch(
         server_name="0.0.0.0",
